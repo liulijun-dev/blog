@@ -8,8 +8,8 @@ author: 刘利军
 
 分层架构是软件的软件中最常用的架构设计方法，如clean架构、MVP架构等。
 
-![Clean架构](Layered-architechture-and-its-data-decoupling/clean-architecture.png)
-![MVP架构](Layered-architechture-and-its-data-decoupling/mvp-architecture.png)
+![Clean架构](https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/clean-architecture.png)
+![MVP架构](https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/mvp-architecture.png)
 
 分层的实质是隔离关注点，使得每一层具有一致的行为，这样不同的开发才有可能关注不同的软件层。如WEB开发中常用的前后端分离，前端关注的是用户体验，后端关注的是稳定可靠的服务。再比如DDD中主张将领域和应用进行分离，从而能够获得一个比较稳定的领域能力层。
 
@@ -38,7 +38,7 @@ author: 刘利军
 - PO（Persistent Object）：持久化对象，它跟持久层（通常是数据库）的数据结构形成一一对应的映射关系，如果持久层是关系型数据库，那么，数据表中的每个字段（或若干个）就对应PO的一个（或若干个）属性
 
 其中，各个数据模型的转换关系如下：
-![VO DTO DO PO转换关系](Layered-architechture-and-its-data-decoupling/vo-dto-do-po.png)
+![VO DTO DO PO转换关系](https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/vo-dto-do-po.png)
 
 - 用户发出请求，其请求中的数据在UI层表示为VO
 
