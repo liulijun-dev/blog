@@ -25,7 +25,7 @@ public @interface EnableWebSecurity {
 
 该注解通过@Import注解将WebSecurityConfiguration类导入到Spring 的IoC容器，从而对Spring Security进行初始化。同时，@EnableWebSecurity可以通过配置debug = true开启调试模式，能够打印出Spring Security运行时的详细信息，如下：
 
-![img](file:////var/folders/_g/gvgmkhf11hn_0z32_r0nkxch0000gn/T/com.kingsoft.wpsoffice.mac/wps-liulijun/ksohtml/wpsuj5DWQ.jpg) 
+![img](https://liulijun-dev.github.io/2020/02/18/Spring-Security-Source-Code1-filter-chain-init/enablewesecurity_debug_output.jpg) 
 
 接下来，我们看看上图中的过滤器是如何加载到过滤器链中的。
 
@@ -223,7 +223,7 @@ protected Filter performBuild() throws Exception {
 
 (15) 为每一个securityFilterChainBuilder生成过滤器链，securityFilterChainBuilders集合中的内容是我们在第（11）步中设置的HttpSecurity。这里请注意一点，即WebSecurity和HttpSecurity有相同的继承结构，如下：
 
-![img](file:////var/folders/_g/gvgmkhf11hn_0z32_r0nkxch0000gn/T/com.kingsoft.wpsoffice.mac/wps-liulijun/ksohtml/wpsARF12v.jpg) 
+![img](https://liulijun-dev.github.io/2020/02/18/Spring-Security-Source-Code1-filter-chain-init/uml_for_websecurity_and_httpsecurity.jpg) 
 
 因此，参考步骤（10）~（14），可以确定最终调用的是HttpSecurity下的performBuild函数，如下：
 
