@@ -1,7 +1,7 @@
 ---
 title: Spring Security源码导读1-Spring Security过滤器链初始化
 date: 2020-02-18 20:00:33
-tags:Spring Security, filter chain
+tags: Spring Security, 过滤器, filter
 ---
 Spring Security的核心实现是通过一条过滤器链来确定用户的每一个请求应该得到什么样的反馈。
 
