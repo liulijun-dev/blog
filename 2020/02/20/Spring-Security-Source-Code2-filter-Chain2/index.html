@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('https://liulijun-dev.github.io').hostname,
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.7.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="在Spring Security源码导读1-Spring Security过滤器链的初始化1文章中，遗留了如下两个问题：  在步骤(15)中，我们说HttpSecurity类中的performBuild函数返回了DefaultSecurityFilterChain类，而该类中封装了该链的所有过滤器，那么这些过滤器是如何添加进来的呢？  在步骤(17)中生成的FilterChainProxy对象也是">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring Security源码导读2 - Spring Security过滤器链初始化2">
+<meta property="og:url" content="https://liulijun-dev.github.io/2020/02/20/Spring-Security-Source-Code2-filter-Chain2/index.html">
+<meta property="og:site_name" content="刘利军">
+<meta property="og:description" content="在Spring Security源码导读1-Spring Security过滤器链的初始化1文章中，遗留了如下两个问题：  在步骤(15)中，我们说HttpSecurity类中的performBuild函数返回了DefaultSecurityFilterChain类，而该类中封装了该链的所有过滤器，那么这些过滤器是如何添加进来的呢？  在步骤(17)中生成的FilterChainProxy对象也是">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://liulijun-dev.github.io/.io//liulijun/projects/blog/source/_posts/Spring-Security-Source-Code2-filter-Chain2/ServletContextInitializer.png">
+<meta property="article:published_time" content="2020-02-20T05:04:46.000Z">
+<meta property="article:modified_time" content="2020-02-20T06:18:35.499Z">
+<meta property="article:author" content="刘利军">
+<meta property="article:tag" content="Spring Security, Filter, 过滤器链调用实现原理，过滤器向Servlet容器注册">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://liulijun-dev.github.io/.io//liulijun/projects/blog/source/_posts/Spring-Security-Source-Code2-filter-Chain2/ServletContextInitializer.png">
+
+<link rel="canonical" href="https://liulijun-dev.github.io/2020/02/20/Spring-Security-Source-Code2-filter-Chain2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Spring Security源码导读2 - Spring Security过滤器链初始化2 | 刘利军</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">刘利军</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">个人技术总结与洞见</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://liulijun-dev.github.io/2020/02/20/Spring-Security-Source-Code2-filter-Chain2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="刘利军">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="刘利军">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Spring Security源码导读2 - Spring Security过滤器链初始化2
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-02-20 13:04:46 / 修改时间：14:18:35" itemprop="dateCreated datePublished" datetime="2020-02-20T13:04:46+08:00">2020-02-20</time>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>8.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>8 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在<a href="https://blog.csdn.net/l460133921/article/details/104381535" target="_blank" rel="noopener" title="Spring Security源码导读1-Spring Security过滤器链的初始化1">Spring Security源码导读1-Spring Security过滤器链的初始化1</a>文章中，遗留了如下两个问题：</p>
+<ol>
+<li><p>在步骤(15)中，我们说HttpSecurity类中的performBuild函数返回了DefaultSecurityFilterChain类，而该类中封装了该链的所有过滤器，那么这些过滤器是如何添加进来的呢？</p>
+</li>
+<li><p>在步骤(17)中生成的FilterChainProxy对象也是Filter实例，那么在收到客户端请求后是如何完成过滤器链式调用的呢？</p>
+</li>
+</ol>
+<p>接下来我们就逐步回答上面两个问题。本文先回答问题2，因为回答问题2后，读者就可以从全视角了解Spring Security过滤器的创建和调用流程。本文中会将该问题拆的更细，按由简到繁的顺序来解答。</p>
+<h1 id="1-FilterChainProxy如何实现过滤器链调用"><a href="#1-FilterChainProxy如何实现过滤器链调用" class="headerlink" title="1. FilterChainProxy如何实现过滤器链调用"></a>1. FilterChainProxy如何实现过滤器链调用</h1><p>根据Filter接口的定义，可以确定每次客户端请求在经过过滤器时调用的都是doFilter函数，FilterChainProxy对doFilter函数的实现如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doFilter</span><span class="params">(ServletRequest request, ServletResponse response,</span></span></span><br><span class="line"><span class="function"><span class="params">			FilterChain chain)</span> <span class="keyword">throws</span> IOException, ServletException </span>&#123;</span><br><span class="line">		<span class="keyword">boolean</span> clearContext = request.getAttribute(FILTER_APPLIED) == <span class="keyword">null</span>;</span><br><span class="line">		<span class="keyword">if</span> (clearContext) &#123;</span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				request.setAttribute(FILTER_APPLIED, Boolean.TRUE);</span><br><span class="line">				(<span class="number">1</span>)doFilterInternal(request, response, chain);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">finally</span> &#123;</span><br><span class="line">				SecurityContextHolder.clearContext();</span><br><span class="line">				request.removeAttribute(FILTER_APPLIED);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> &#123;</span><br><span class="line">			doFilterInternal(request, response, chain);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>(1) 派发到过滤器链上执行，可以看到doFilter调用的是FilterChainProxy实例的内部函数doFilterInternal，其代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">private void doFilterInternal(ServletRequest request, ServletResponse response,</span><br><span class="line">      FilterChain chain) throws IOException, ServletException &#123;</span><br><span class="line"></span><br><span class="line">   FirewalledRequest fwRequest &#x3D; firewall</span><br><span class="line">         .getFirewalledRequest((HttpServletRequest) request);</span><br><span class="line">   HttpServletResponse fwResponse &#x3D; firewall</span><br><span class="line">         .getFirewalledResponse((HttpServletResponse) response);</span><br><span class="line"></span><br><span class="line">   （2)List&lt;Filter&gt; filters &#x3D; getFilters(fwRequest);</span><br><span class="line"></span><br><span class="line">   if (filters &#x3D;&#x3D; null || filters.size() &#x3D;&#x3D; 0) &#123;</span><br><span class="line">      if (logger.isDebugEnabled()) &#123;</span><br><span class="line">         logger.debug(UrlUtils.buildRequestUrl(fwRequest)</span><br><span class="line">               + (filters &#x3D;&#x3D; null ? &quot; has no matching filters&quot;</span><br><span class="line">                     : &quot; has an empty filter list&quot;));</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      fwRequest.reset();</span><br><span class="line"></span><br><span class="line">      (3)chain.doFilter(fwRequest, fwResponse);</span><br><span class="line"></span><br><span class="line">      return;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   (4)VirtualFilterChain vfc &#x3D; new VirtualFilterChain(fwRequest, chain, filters);</span><br><span class="line">   (5)vfc.doFilter(fwRequest, fwResponse);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>(2) 根据每个过滤器链配置的RequestMathcher，决定每一个请求要经过哪些过滤器。(参考<a href="https://blog.csdn.net/l460133921/article/details/104381535" target="_blank" rel="noopener" title="Spring Security源码导读1-Spring Security过滤器链的初始化1">Spring Security源码导读1-Spring Security过滤器链的初始化1</a>第(15)步，HttpSecurity在返回performBuild中返回的是DefaultSecurityFilterChain类的实例，而在创造DefaultSecurityFilterChain实例时传递的RequestMatcher实例是AnyRequestMatcher.INSTANCE，其matches函数默认返回true，请参考附录代码一)。</p>
+<p>(3) 如果当前过滤器链没有匹配的过滤器，则执行下一条过滤器链。</p>
+<p>(4) 将所有的过滤器合并成一个虚拟过滤器链。</p>
+<p>(5) 执行虚拟过滤器链。</p>
+<p>可以看到最终执行的是虚拟过滤器链VirtualFilterChain类的实例，接下来看看VirtualFilterChain类doFilter的实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doFilter</span><span class="params">(ServletRequest request, ServletResponse response)</span></span></span><br><span class="line"><span class="function">				<span class="keyword">throws</span> IOException, ServletException </span>&#123;</span><br><span class="line">			<span class="keyword">if</span> (currentPosition == size) &#123;</span><br><span class="line">				<span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">					logger.debug(UrlUtils.buildRequestUrl(firewalledRequest)</span><br><span class="line">							+ <span class="string">" reached end of additional filter chain; proceeding with original chain"</span>);</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				<span class="comment">// Deactivate path stripping as we exit the security filter chain</span></span><br><span class="line">				<span class="keyword">this</span>.firewalledRequest.reset();</span><br><span class="line"></span><br><span class="line">				(<span class="number">6</span>)originalChain.doFilter(request, response);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">else</span> &#123;</span><br><span class="line">				currentPosition++;</span><br><span class="line"></span><br><span class="line">				(<span class="number">7</span>)Filter nextFilter = additionalFilters.get(currentPosition - <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">				<span class="keyword">if</span> (logger.isDebugEnabled()) &#123;</span><br><span class="line">					logger.debug(UrlUtils.buildRequestUrl(firewalledRequest)</span><br><span class="line">							+ <span class="string">" at position "</span> + currentPosition + <span class="string">" of "</span> + size</span><br><span class="line">							+ <span class="string">" in additional filter chain; firing Filter: '"</span></span><br><span class="line">							+ nextFilter.getClass().getSimpleName() + <span class="string">"'"</span>);</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				(<span class="number">8</span>)nextFilter.doFilter(request, response, <span class="keyword">this</span>);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+<p>(6) 如果当前虚拟过滤器链上的所有过滤器都已经执行完毕，则执行原生过滤器链上的剩余逻辑。</p>
+<p>(7) 获得当前虚拟过滤器链上的下一个过滤器。</p>
+<p>(8) 执行过滤器。doFilter的函数原型定义如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doFilter</span><span class="params">(ServletRequest request, ServletResponse response,</span></span></span><br><span class="line"><span class="function"><span class="params">            FilterChain chain)</span> <span class="keyword">throws</span> IOException, ServletException</span>;</span><br></pre></td></tr></table></figure>
+
+<p>我们可以看到第三个参数传递的是this，即当前虚拟过滤器链实例。因此，当在nextFilter的doFilter函数中再次通过chain参数调用doFilter函数时，则会再次调用到当前虚拟过滤器链实例（伪代码如下)，从而完成虚拟过滤器链上的所有过滤器的调用 。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doFilter</span><span class="params">(ServletRequest request, ServletResponse response,</span></span></span><br><span class="line"><span class="function"><span class="params">FilterChain chain)</span> <span class="keyword">throws</span> IOException, ServletException </span>&#123;</span><br><span class="line">   ......</span><br><span class="line">   chain.doFilter(request, response, chain); <span class="comment">//这里的chain是传进来的VirtualFilterChain实例</span></span><br><span class="line">   ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上就是FilterChainProxy实现过滤器链调用的全过程。</p>
+<p>接下来讨论一下客户端请求是如何传递到过滤器的，但是要了解请求传递到过滤器的过程，就必须得清楚过滤器在Servlet容器中注册的是什么。</p>
+<h1 id="2-Spring-Security过滤器如何注册到Servlet容器"><a href="#2-Spring-Security过滤器如何注册到Servlet容器" class="headerlink" title="2. Spring Security过滤器如何注册到Servlet容器"></a>2. Spring Security过滤器如何注册到Servlet容器</h1><p>这里先说明一下，为什么本节的标题用的是过滤器而非过滤器链，因为本文第一节已经分析了FilterChainProxy实现过滤器链调用的原理，而FilterChainProxy本质上也是一个Filter实例。</p>
+<p>在IDE中启动Spring应用默认使用的是Spring Boot内嵌的Tomcat容器，因此这里讨论的Servlet容器指的是Tomcat的Servlet容器。在启动Spring应用时会向IoC注册securityFilterChainRegistration Bean：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span>(proxyBeanMethods = <span class="keyword">false</span>)</span><br><span class="line"><span class="meta">@ConditionalOnWebApplication</span>(type = Type.SERVLET)</span><br><span class="line"><span class="meta">@EnableConfigurationProperties</span>(SecurityProperties<span class="class">.<span class="keyword">class</span>)</span></span><br><span class="line"><span class="class">@<span class="title">ConditionalOnClass</span>(</span>&#123; AbstractSecurityWebApplicationInitializer<span class="class">.<span class="keyword">class</span>, <span class="title">SessionCreationPolicy</span>.<span class="title">class</span> &#125;)</span></span><br><span class="line"><span class="class">@<span class="title">AutoConfigureAfter</span>(<span class="title">SecurityAutoConfiguration</span>.<span class="title">class</span>)</span></span><br><span class="line"><span class="class"><span class="title">public</span> <span class="title">class</span> <span class="title">SecurityFilterAutoConfiguration</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String DEFAULT_FILTER_NAME = AbstractSecurityWebApplicationInitializer.DEFAULT_FILTER_NAME;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Bean</span></span><br><span class="line">	<span class="meta">@ConditionalOnBean</span>(name = DEFAULT_FILTER_NAME)</span><br><span class="line">	<span class="function"><span class="keyword">public</span> DelegatingFilterProxyRegistrationBean <span class="title">securityFilterChainRegistration</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">			SecurityProperties securityProperties)</span> </span>&#123;</span><br><span class="line">		(<span class="number">9</span>)DelegatingFilterProxyRegistrationBean registration = <span class="keyword">new</span> DelegatingFilterProxyRegistrationBean(</span><br><span class="line">				DEFAULT_FILTER_NAME);</span><br><span class="line">		registration.setOrder(securityProperties.getFilter().getOrder());</span><br><span class="line">		registration.setDispatcherTypes(getDispatcherTypes(securityProperties));</span><br><span class="line">		<span class="keyword">return</span> registration;</span><br><span class="line">	&#125;</span><br><span class="line">	......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>(9) DelegatingFilterProxyRegistrationBean实现了ServletContextInitializer接口，该接口用于配置Servlet上下文。DelegatingFilterProxyRegistrationBean目的是向Servlet容器中注册一个过滤器：实现类为 DelegatingFilterProxy 的一个 Servlet Filter。DelegatingFilterProxy  其实是一个代理过滤器，它被 Servlet 容器用于匹配特定URL模式的请求，而它会将任务委托给Spring管理的Bean，即名字为 springSecurityFilterChain 的Bean，而springSecurityFilterChain正是<a href="https://blog.csdn.net/l460133921/article/details/104381535" target="_blank" rel="noopener" title="Spring Security源码导读1-Spring Security过滤器链的初始化1">Spring Security源码导读1-Spring Security过滤器链的初始化1</a>中介绍的，<font color="red">从而实现了Servlet容器管理的DelegatingFilterProxy与Spring容器创建的springSecurityFilterChain Bean的关联</font>。关于这一段结论的代码分析，请参考附录代码二。</p>
+<p>为了加深对DelegatingFilterProxy的理解，我们可以看下其注释：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*Proxy for a standard Servlet Filter, delegating to a Spring-managed bean that</span></span><br><span class="line"><span class="comment"> * implements the Filter interface. Supports a "targetBeanName" filter init-param</span></span><br><span class="line"><span class="comment"> * in &#123;@code web.xml&#125;, specifying the name of the target bean in the Spring</span></span><br><span class="line"><span class="comment"> * application context.</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></table></figure>
+
+<p>清楚了Servlet容器管理的DelegatingFilterProxy与Spring容器创建的springSecurityFilterChain Bean的关联，接下来就可以分析客户端请求如何传递到过滤器。</p>
+<h1 id="3-客户端请求如何传递到过滤器"><a href="#3-客户端请求如何传递到过滤器" class="headerlink" title="3. 客户端请求如何传递到过滤器"></a>3. 客户端请求如何传递到过滤器</h1><p>当用户请求到来并且与过滤器的URL模式匹配后，会调用DelegatingFilterProxy的doFilter函数：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"> <span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doFilter</span><span class="params">(ServletRequest request, ServletResponse response, FilterChain filterChain)</span></span></span><br><span class="line"><span class="function">		<span class="keyword">throws</span> ServletException, IOException </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Lazily initialize the delegate if necessary.</span></span><br><span class="line">	Filter delegateToUse = <span class="keyword">this</span>.delegate;</span><br><span class="line">	<span class="keyword">if</span> (delegateToUse == <span class="keyword">null</span>) &#123;</span><br><span class="line">		<span class="keyword">synchronized</span> (<span class="keyword">this</span>.delegateMonitor) &#123;</span><br><span class="line">			delegateToUse = <span class="keyword">this</span>.delegate;</span><br><span class="line">			<span class="keyword">if</span> (delegateToUse == <span class="keyword">null</span>) &#123;</span><br><span class="line">				WebApplicationContext wac = findWebApplicationContext();</span><br><span class="line">				<span class="keyword">if</span> (wac == <span class="keyword">null</span>) &#123;</span><br><span class="line">					<span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"No WebApplicationContext found: "</span> +</span><br><span class="line">							<span class="string">"no ContextLoaderListener or DispatcherServlet registered?"</span>);</span><br><span class="line">				&#125;</span><br><span class="line">				(<span class="number">10</span>)delegateToUse = initDelegate(wac);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">this</span>.delegate = delegateToUse;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Let the delegate perform the actual doFilter operation.</span></span><br><span class="line">	(<span class="number">11</span>)invokeDelegate(delegateToUse, request, response, filterChain);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>(10) 获得Spring容器管理的springSecurityFilterChain Bean.</p>
+<p>(11) 调用FilterChainProxy的doFilter函数，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">invokeDelegate</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">			Filter delegate, ServletRequest request, ServletResponse response, FilterChain filterChain)</span></span></span><br><span class="line"><span class="function">			<span class="keyword">throws</span> ServletException, IOException </span>&#123;</span><br><span class="line"></span><br><span class="line">		delegate.doFilter(request, response, filterChain);</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>以上就是Spring Security过滤器的调用和执行流程。在整个分析中，为了分析的简单和文章不至于太长，我并没有详细分析Servlet容器和Spring IoC容器的交互过程，有兴趣的读者可以自行分析。</p>
+<h1 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h1><h2 id="1-代码一"><a href="#1-代码一" class="headerlink" title="1. 代码一"></a>1. 代码一</h2><p>HttpSecurity.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> RequestMatcher requestMatcher = AnyRequestMatcher.INSTANCE;</span><br><span class="line"></span><br><span class="line"> <span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> DefaultSecurityFilterChain <span class="title">performBuild</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	filters.sort(comparator);</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">new</span> DefaultSecurityFilterChain(requestMatcher, filters);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-代码二"><a href="#2-代码二" class="headerlink" title="2. 代码二"></a>2. 代码二</h2><p>我们直接从ServletWebServerApplicationContext类开始分析，因为在Servlet类型应用中，实际实例化的应用上下文为ServletWebServerApplicationContext。为什么会如此，读者可以分析一下Spring Boot的启动流程。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Returns the &#123;<span class="doctag">@link</span> ServletContextInitializer&#125; that will be used to complete the</span></span><br><span class="line"><span class="comment"> * setup of this &#123;<span class="doctag">@link</span> WebApplicationContext&#125;.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> the self initializer</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@see</span> #prepareWebApplicationContext(ServletContext)</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> org.springframework.boot.web.servlet.<span class="function">ServletContextInitializer <span class="title">getSelfInitializer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">this</span>::selfInitialize;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">selfInitialize</span><span class="params">(ServletContext servletContext)</span> <span class="keyword">throws</span> ServletException </span>&#123;</span><br><span class="line">	prepareWebApplicationContext(servletContext);</span><br><span class="line">	registerApplicationScope(servletContext);</span><br><span class="line">	WebApplicationContextUtils.registerEnvironmentBeans(getBeanFactory(), servletContext);</span><br><span class="line">	(<span class="number">1</span>)<span class="keyword">for</span> (ServletContextInitializer beans : getServletContextInitializerBeans()) &#123;</span><br><span class="line">		beans.onStartup(servletContext);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>(1) 回调所有ServletContextInitializer的onStart函数。通过调试，ServletWebServerApplicationContext中有如下这些ServletContextInitializer：</p>
+<p><img src="/.io//liulijun/projects/blog/source/_posts/Spring-Security-Source-Code2-filter-Chain2/ServletContextInitializer.png" alt="image-20200220112615616"></p>
+<p>可以看到DelegatingFilterProxyRegistrationBean类的实例，再看看其onStart回调函数，其最终回调的是addRegistration函数(DelegatingFilterProxyRegistrationBean继承自AbstractFilterRegistrationBean，该函数位于其中)：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"> <span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> Dynamic <span class="title">addRegistration</span><span class="params">(String description, ServletContext servletContext)</span> </span>&#123;</span><br><span class="line">	Filter filter = getFilter();</span><br><span class="line">	(<span class="number">2</span>)<span class="keyword">return</span> servletContext.addFilter(getOrDeduceName(filter), filter);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>(2) 通过调用DelegatingFilterProxyRegistrationBean中的getFilter函数获得DelegatingFilterProxy类的实例，并将基添加到Servlet上下文中，最终将过滤器添加到StandardContext（这个就是Tomcat的上下文了，从而建立了Tomcat容器与Spring的关系）的filterDefs属性中。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Spring-Security-Filter-%E8%BF%87%E6%BB%A4%E5%99%A8%E9%93%BE%E8%B0%83%E7%94%A8%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%EF%BC%8C%E8%BF%87%E6%BB%A4%E5%99%A8%E5%90%91Servlet%E5%AE%B9%E5%99%A8%E6%B3%A8%E5%86%8C/" rel="tag"># Spring Security, Filter, 过滤器链调用实现原理，过滤器向Servlet容器注册</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/02/18/Spring-Security-Source-Code1-filter-chain-init/" rel="prev" title="Spring Security源码导读1-Spring Security过滤器链初始化1">
+      <i class="fa fa-chevron-left"></i> Spring Security源码导读1-Spring Security过滤器链初始化1
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/02/20/hello-world/" rel="next" title="Hello World">
+      Hello World <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-FilterChainProxy如何实现过滤器链调用"><span class="nav-number">1.</span> <span class="nav-text">1. FilterChainProxy如何实现过滤器链调用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-Spring-Security过滤器如何注册到Servlet容器"><span class="nav-number">2.</span> <span class="nav-text">2. Spring Security过滤器如何注册到Servlet容器</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-客户端请求如何传递到过滤器"><span class="nav-number">3.</span> <span class="nav-text">3. 客户端请求如何传递到过滤器</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#附录"><span class="nav-number">4.</span> <span class="nav-text">附录</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-代码一"><span class="nav-number">4.1.</span> <span class="nav-text">1. 代码一</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-代码二"><span class="nav-number">4.2.</span> <span class="nav-text">2. 代码二</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">刘利军</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/liulijun-dev" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;liulijun-dev" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:neteasellj@qq.com" title="E-Mail → mailto:neteasellj@qq.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/l460133921" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;l460133921" rel="noopener" target="_blank"><i class="fa fa-fw fa-csdn"></i>CSDN</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">刘利军</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">22k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">20 分钟</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.7.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
