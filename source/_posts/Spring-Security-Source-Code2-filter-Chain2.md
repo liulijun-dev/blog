@@ -3,7 +3,7 @@ title: Spring Security源码导读2 - Spring Security过滤器链初始化2
 date: 2020-02-20 13:04:46
 tags: Spring Security, Filter, 过滤器链调用实现原理，过滤器向Servlet容器注册
 ---
-在[Spring Security源码导读1-Spring Security过滤器链的初始化1](https://blog.csdn.net/l460133921/article/details/104381535 "Spring Security源码导读1-Spring Security过滤器链的初始化1")文章中，遗留了如下两个问题：
+在[Spring Security源码导读1-Spring Security过滤器链的初始化1](https://liulijun-dev.github.io/2020/02/18/Spring-Security-Source-Code1-filter-chain-init/)文章中，遗留了如下两个问题：
 
 1. 在步骤(15)中，我们说HttpSecurity类中的performBuild函数返回了DefaultSecurityFilterChain类，而该类中封装了该链的所有过滤器，那么这些过滤器是如何添加进来的呢？
 
@@ -68,7 +68,7 @@ private void doFilterInternal(ServletRequest request, ServletResponse response,
 }
 ```
 
-(2) 根据每个过滤器链配置的RequestMathcher，决定每一个请求要经过哪些过滤器。(参考[Spring Security源码导读1-Spring Security过滤器链的初始化1](https://blog.csdn.net/l460133921/article/details/104381535 "Spring Security源码导读1-Spring Security过滤器链的初始化1")第(15)步，HttpSecurity在返回performBuild中返回的是DefaultSecurityFilterChain类的实例，而在创造DefaultSecurityFilterChain实例时传递的RequestMatcher实例是AnyRequestMatcher.INSTANCE，其matches函数默认返回true，请参考附录代码一)。
+(2) 根据每个过滤器链配置的RequestMathcher，决定每一个请求要经过哪些过滤器。(参考[Spring Security源码导读1-Spring Security过滤器链的初始化1](https://liulijun-dev.github.io/2020/02/18/Spring-Security-Source-Code1-filter-chain-init/)第(15)步，HttpSecurity在返回performBuild中返回的是DefaultSecurityFilterChain类的实例，而在创造DefaultSecurityFilterChain实例时传递的RequestMatcher实例是AnyRequestMatcher.INSTANCE，其matches函数默认返回true，请参考附录代码一)。
 
 (3) 如果当前过滤器链没有匹配的过滤器，则执行下一条过滤器链。
 
@@ -167,7 +167,7 @@ public class SecurityFilterAutoConfiguration {
 }
 ```
 
-(9) DelegatingFilterProxyRegistrationBean实现了ServletContextInitializer接口，该接口用于配置Servlet上下文。DelegatingFilterProxyRegistrationBean目的是向Servlet容器中注册一个过滤器：实现类为 DelegatingFilterProxy 的一个 Servlet Filter。DelegatingFilterProxy  其实是一个代理过滤器，它被 Servlet 容器用于匹配特定URL模式的请求，而它会将任务委托给Spring管理的Bean，即名字为 springSecurityFilterChain 的Bean，而springSecurityFilterChain正是[Spring Security源码导读1-Spring Security过滤器链的初始化1](https://blog.csdn.net/l460133921/article/details/104381535 "Spring Security源码导读1-Spring Security过滤器链的初始化1")中介绍的，<font color='red'>从而实现了Servlet容器管理的DelegatingFilterProxy与Spring容器创建的springSecurityFilterChain Bean的关联</font>。关于这一段结论的代码分析，请参考附录代码二。
+(9) DelegatingFilterProxyRegistrationBean实现了ServletContextInitializer接口，该接口用于配置Servlet上下文。DelegatingFilterProxyRegistrationBean目的是向Servlet容器中注册一个过滤器：实现类为 DelegatingFilterProxy 的一个 Servlet Filter。DelegatingFilterProxy  其实是一个代理过滤器，它被 Servlet 容器用于匹配特定URL模式的请求，而它会将任务委托给Spring管理的Bean，即名字为 springSecurityFilterChain 的Bean，而springSecurityFilterChain正是[Spring Security源码导读1-Spring Security过滤器链的初始化1](https://liulijun-dev.github.io/2020/02/18/Spring-Security-Source-Code1-filter-chain-init/)中介绍的，<font color='red'>从而实现了Servlet容器管理的DelegatingFilterProxy与Spring容器创建的springSecurityFilterChain Bean的关联</font>。关于这一段结论的代码分析，请参考附录代码二。
 
 为了加深对DelegatingFilterProxy的理解，我们可以看下其注释：
 
@@ -272,7 +272,7 @@ HttpSecurity.java
 
 (1) 回调所有ServletContextInitializer的onStart函数。通过调试，ServletWebServerApplicationContext中有如下这些ServletContextInitializer：
 
-![image-20200220112615616](/Users/liulijun/projects/blog/source/_posts/Spring-Security-Source-Code2-filter-Chain2/ServletContextInitializer.png)
+![image-20200220112615616](https://liulijun-dev.github.io/2020/02/20/Spring-Security-Source-Code2-filter-Chain2/ServletContextInitializer.png)
 
 可以看到DelegatingFilterProxyRegistrationBean类的实例，再看看其onStart回调函数，其最终回调的是addRegistration函数(DelegatingFilterProxyRegistrationBean继承自AbstractFilterRegistrationBean，该函数位于其中)：
 
