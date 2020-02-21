@@ -185,6 +185,114 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://liulijun-dev.github.io/2020/02/21/code-review-process/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="刘利军">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="刘利军">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/02/21/code-review-process/" class="post-title-link" itemprop="url">Code Review之前中后</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-02-21 18:55:58 / 修改时间：19:01:06" itemprop="dateCreated datePublished" datetime="2020-02-21T18:55:58+08:00">2020-02-21</time>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>1.2k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>一般我们在做Code Review时希望实现以下几个目的：</p>
+<ul>
+<li>传播好的编码实践</li>
+<li>让大家对所做软件更了解</li>
+<li>避免重复采坑</li>
+<li>发现方案或代码中功能性和非功能性问题，以及未考虑到的场景</li>
+</ul>
+<p>很多团队在做Code Review时只是走了个形式，而没有实现真正目的。这篇博客会给大家介绍Code Review的前中后分别各做什么，从而使得Code Review形成一个闭环过程。</p>
+<h1 id="一般的代码合入流程"><a href="#一般的代码合入流程" class="headerlink" title="一般的代码合入流程"></a>一般的代码合入流程</h1><p>目前大多数公司都使用git来管理代码，一般开发会通过gerrit或pull request（记为PR）来合入代码，因此一个一般的代码提交流程如下：</p>
+<p><img src="https://img-blog.csdnimg.cn/2019062821451838.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2w0NjAxMzM5MjE=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h1 id="Code-Review之前"><a href="#Code-Review之前" class="headerlink" title="Code Review之前"></a>Code Review之前</h1><p>在做Code Review之前，至少要完成：</p>
+<ul>
+<li>开发需要根据需求说明书或验收条件或问题复现方式来完成自检</li>
+<li>代码通过扫描</li>
+<li>单元测试通过</li>
+</ul>
+<p>我们知道对于修改量比较大的代码，Code Review还是比较占用时间的，因此Code Review不会检查诸如代码格式、if条件是否需要合并、基本功能等这些基本的问题。这些问题需要在Code Review之前由开发、自动化工具和单元测试来保证，比如Lint、Coverity、Findbug、PMD能够帮助我们发现很多潜在的bug、兼容性问题和代码规范问题，我们应该充分利用这些工具。</p>
+<h1 id="Code-Review之中"><a href="#Code-Review之中" class="headerlink" title="Code Review之中"></a>Code Review之中</h1><p>开始Code Review时，开发人员需要确认Reviewers是否了解代码针对的需求或问题，如果不了解可以给Reviewers简单介绍一下，然后<font color="red">按照真实业务的流程来介绍代码</font>，重点介绍可能存在问题的地方，Reviewers在听的时候可以随时提问，确认是问题或需要再确认的需要<font color="red">及时在代码中标注出来</font>。Reviews可以根据如下清单来Review代码：</p>
+<ul>
+<li>代码是否很容易理解</li>
+<li>代码中是否有重复的地方</li>
+<li>代码是否容易测试和调试</li>
+<li>代码是否考虑到并发</li>
+<li>代码是否考虑到了非功能性需求，如性能、内存</li>
+<li>代码是否符合现有的软件架构</li>
+<li>代码是否符合单一职责原则（SRP)</li>
+<li>代码是否符合开闭原则（OCP)</li>
+<li>代码是否符合依赖倒置原则（OIP)</li>
+</ul>
+<p>虽然具体清单项可能不同项目会有不同，但上述这些Review项一般是必须的。</p>
+<h1 id="Code-Review之后"><a href="#Code-Review之后" class="headerlink" title="Code Review之后"></a>Code Review之后</h1><p>代码经过Code Review之后，开发人员需要针对Review过程中提出的问题进行分析和修改，修改完成后再提交新的代码，再走一遍上述流程。一般经过一次Review的代码在第二次Review时会特别快。</p>
+<p>在这里有一点往往是团队忽略的，如果在Review时经常发现一些同类型的问题，这时就该考虑是不是团队内部对相关知识缺乏了解，是不是应该对团队进行一次相关的培训。</p>
+<p>另外，如果我们经常Review出某一类问题，也可以考虑通过配置工具来自动扫描出相关问题。</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ol>
+<li>Code Review Checklist – To Perform Effective Code Reviews. <a href="https://www.evoketechnologies.com/blog/code-review-checklist-perform-effective-code-reviews/" target="_blank" rel="noopener">https://www.evoketechnologies.com/blog/code-review-checklist-perform-effective-code-reviews/</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://liulijun-dev.github.io/2020/02/20/Spring-Security-Source-Code2-filter-Chain2/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -216,7 +324,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-21 18:54:30" itemprop="dateModified" datetime="2020-02-21T18:54:30+08:00">2020-02-21</time>
+                <time title="修改时间：2020-02-21 19:01:06" itemprop="dateModified" datetime="2020-02-21T19:01:06+08:00">2020-02-21</time>
               </span>
 
           <br>
@@ -356,7 +464,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-21 18:54:30" itemprop="dateModified" datetime="2020-02-21T18:54:30+08:00">2020-02-21</time>
+                <time title="修改时间：2020-02-21 19:01:06" itemprop="dateModified" datetime="2020-02-21T19:01:06+08:00">2020-02-21</time>
               </span>
 
           <br>
@@ -486,7 +594,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-21 18:54:30" itemprop="dateModified" datetime="2020-02-21T18:54:30+08:00">2020-02-21</time>
+                <time title="修改时间：2020-02-21 19:01:06" itemprop="dateModified" datetime="2020-02-21T19:01:06+08:00">2020-02-21</time>
               </span>
 
           <br>
@@ -695,7 +803,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-21 18:54:30" itemprop="dateModified" datetime="2020-02-21T18:54:30+08:00">2020-02-21</time>
+                <time title="修改时间：2020-02-21 19:01:06" itemprop="dateModified" datetime="2020-02-21T19:01:06+08:00">2020-02-21</time>
               </span>
 
           <br>
@@ -810,7 +918,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-21 18:54:30" itemprop="dateModified" datetime="2020-02-21T18:54:30+08:00">2020-02-21</time>
+                <time title="修改时间：2020-02-21 19:01:06" itemprop="dateModified" datetime="2020-02-21T19:01:06+08:00">2020-02-21</time>
               </span>
 
           <br>
@@ -939,12 +1047,12 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">6</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>
@@ -989,12 +1097,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">22k</span>
+    <span title="站点总字数">23k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">20 分钟</span>
+    <span title="站点阅读时长">21 分钟</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
   </div>

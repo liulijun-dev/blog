@@ -46,24 +46,22 @@
   };
 </script>
 
-  <meta name="description" content="1. 分层软件架构分层架构是软件的软件中最常用的架构设计方法，如clean架构、MVP架构等。  分层的实质是隔离关注点，使得每一层具有一致的行为，这样不同的开发才有可能关注不同的软件层。如WEB开发中常用的前后端分离，前端关注的是用户体验，后端关注的是稳定可靠的服务。再比如DDD中主张将领域和应用进行分离，从而能够获得一个比较稳定的领域能力层。 解耦的本质是分离变化点，将不同的变化点分离到不同的">
+  <meta name="description" content="前言一般我们在做Code Review时希望实现以下几个目的：  传播好的编码实践 让大家对所做软件更了解 避免重复采坑 发现方案或代码中功能性和非功能性问题，以及未考虑到的场景  很多团队在做Code Review时只是走了个形式，而没有实现真正目的。这篇博客会给大家介绍Code Review的前中后分别各做什么，从而使得Code Review形成一个闭环过程。 一般的代码合入流程目前大多数公司">
 <meta property="og:type" content="article">
-<meta property="og:title" content="分层软件架构及其数据解耦">
-<meta property="og:url" content="https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/index.html">
+<meta property="og:title" content="Code Review之前中后">
+<meta property="og:url" content="https://liulijun-dev.github.io/2020/02/21/code-review-process/index.html">
 <meta property="og:site_name" content="刘利军">
-<meta property="og:description" content="1. 分层软件架构分层架构是软件的软件中最常用的架构设计方法，如clean架构、MVP架构等。  分层的实质是隔离关注点，使得每一层具有一致的行为，这样不同的开发才有可能关注不同的软件层。如WEB开发中常用的前后端分离，前端关注的是用户体验，后端关注的是稳定可靠的服务。再比如DDD中主张将领域和应用进行分离，从而能够获得一个比较稳定的领域能力层。 解耦的本质是分离变化点，将不同的变化点分离到不同的">
+<meta property="og:description" content="前言一般我们在做Code Review时希望实现以下几个目的：  传播好的编码实践 让大家对所做软件更了解 避免重复采坑 发现方案或代码中功能性和非功能性问题，以及未考虑到的场景  很多团队在做Code Review时只是走了个形式，而没有实现真正目的。这篇博客会给大家介绍Code Review的前中后分别各做什么，从而使得Code Review形成一个闭环过程。 一般的代码合入流程目前大多数公司">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/clean-architecture.png">
-<meta property="og:image" content="https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/mvp-architecture.png">
-<meta property="og:image" content="https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/vo-dto-do-po.png">
-<meta property="article:published_time" content="2020-02-11T07:24:58.000Z">
-<meta property="article:modified_time" content="2020-02-21T11:01:06.532Z">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2019062821451838.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2w0NjAxMzM5MjE=,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2020-02-21T10:55:58.000Z">
+<meta property="article:modified_time" content="2020-02-21T11:01:06.540Z">
 <meta property="article:author" content="刘利军">
-<meta property="article:tag" content="软件架构,分层，数据解耦">
+<meta property="article:tag" content="能力建设, code review">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/clean-architecture.png">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/2019062821451838.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2w0NjAxMzM5MjE=,size_16,color_FFFFFF,t_70">
 
-<link rel="canonical" href="https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/">
+<link rel="canonical" href="https://liulijun-dev.github.io/2020/02/21/code-review-process/">
 
 
 <script id="page-configurations">
@@ -75,7 +73,7 @@
   };
 </script>
 
-  <title>分层软件架构及其数据解耦 | 刘利军</title>
+  <title>Code Review之前中后 | 刘利军</title>
   
 
 
@@ -190,7 +188,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/">
+    <link itemprop="mainEntityOfPage" href="https://liulijun-dev.github.io/2020/02/21/code-review-process/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -203,7 +201,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          分层软件架构及其数据解耦
+          Code Review之前中后
         </h1>
 
         <div class="post-meta">
@@ -212,16 +210,10 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
+              
 
-              <time title="创建时间：2020-02-11 15:24:58" itemprop="dateCreated datePublished" datetime="2020-02-11T15:24:58+08:00">2020-02-11</time>
+              <time title="创建时间：2020-02-21 18:55:58 / 修改时间：19:01:06" itemprop="dateCreated datePublished" datetime="2020-02-21T18:55:58+08:00">2020-02-21</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-21 19:01:06" itemprop="dateModified" datetime="2020-02-21T19:01:06+08:00">2020-02-21</time>
-              </span>
 
           <br>
             <span class="post-meta-item" title="本文字数">
@@ -229,7 +221,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>1.1k</span>
+              <span>1.2k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -248,43 +240,42 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="1-分层软件架构"><a href="#1-分层软件架构" class="headerlink" title="1. 分层软件架构"></a>1. 分层软件架构</h1><p>分层架构是软件的软件中最常用的架构设计方法，如clean架构、MVP架构等。</p>
-<p><img src="https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/clean-architecture.png" alt="Clean架构"><br><img src="https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/mvp-architecture.png" alt="MVP架构"></p>
-<p>分层的实质是隔离关注点，使得每一层具有一致的行为，这样不同的开发才有可能关注不同的软件层。如WEB开发中常用的前后端分离，前端关注的是用户体验，后端关注的是稳定可靠的服务。再比如DDD中主张将领域和应用进行分离，从而能够获得一个比较稳定的领域能力层。</p>
-<p>解耦的本质是分离变化点，将不同的变化点分离到不同的层次或模块中，使得其职责更单一，从而有利于软件的开发、维护和扩展。</p>
-<p>因为用户对其完成某一系列业务case的完整性并没有随着解耦而消失，因此在分层的软件架构中除了分和解，还要有合。通过聚合层、各类中间件sdk等来完成用户的具体业务case。</p>
-<p>分、解、合中，分和解是软件研发组织内部的诉求，不是用户诉求，主要完成用户界面、业务逻辑和数据存储几大类任务的分层和解耦。合是基于分和解的结果，实际是其难度更大，否则会造成合的结果耦合过重导致难于维护。因此，分和解时要考虑到合，只有同时考虑到分、解、合的架构才是一个完整的架构。</p>
-<h1 id="2-各软件层间的数据解耦和转换"><a href="#2-各软件层间的数据解耦和转换" class="headerlink" title="2. 各软件层间的数据解耦和转换"></a>2. 各软件层间的数据解耦和转换</h1><p>采用分层的软件架构后，在各个软件层上都要有自己的数据模型，但由于用户业务的完整性，各个软件层的数据又需要相互转换，从而完成软件的“分”与“合”。各个软件层的数据模型一般要满足如下约束：</p>
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>一般我们在做Code Review时希望实现以下几个目的：</p>
 <ul>
-<li><p>每个软件层只能使用自己的数据模型</p>
-</li>
-<li><p>软件层间的数据模型通过转换器相互转换</p>
-</li>
+<li>传播好的编码实践</li>
+<li>让大家对所做软件更了解</li>
+<li>避免重复采坑</li>
+<li>发现方案或代码中功能性和非功能性问题，以及未考虑到的场景</li>
 </ul>
-<p>分层架构中常用的数据模型是VO、DTO、 DO和PO，解析如下：</p>
+<p>很多团队在做Code Review时只是走了个形式，而没有实现真正目的。这篇博客会给大家介绍Code Review的前中后分别各做什么，从而使得Code Review形成一个闭环过程。</p>
+<h1 id="一般的代码合入流程"><a href="#一般的代码合入流程" class="headerlink" title="一般的代码合入流程"></a>一般的代码合入流程</h1><p>目前大多数公司都使用git来管理代码，一般开发会通过gerrit或pull request（记为PR）来合入代码，因此一个一般的代码提交流程如下：</p>
+<p><img src="https://img-blog.csdnimg.cn/2019062821451838.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2w0NjAxMzM5MjE=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h1 id="Code-Review之前"><a href="#Code-Review之前" class="headerlink" title="Code Review之前"></a>Code Review之前</h1><p>在做Code Review之前，至少要完成：</p>
 <ul>
-<li><p>VO（View Object）：视图对象，用于表示层，它的作用是封装页面（或组件）的数据</p>
-</li>
-<li><p>DTO（Data Transfer Object）：数据传输对象，用于表示层与服务层之间的数据传输对象</p>
-</li>
-<li><p>DO（Domain Object）：领域对象，从现实世界中抽象出来的有形或无形的业务实体</p>
-</li>
-<li><p>PO（Persistent Object）：持久化对象，它跟持久层（通常是数据库）的数据结构形成一一对应的映射关系，如果持久层是关系型数据库，那么，数据表中的每个字段（或若干个）就对应PO的一个（或若干个）属性</p>
-</li>
+<li>开发需要根据需求说明书或验收条件或问题复现方式来完成自检</li>
+<li>代码通过扫描</li>
+<li>单元测试通过</li>
 </ul>
-<p>其中，各个数据模型的转换关系如下：<br><img src="https://liulijun-dev.github.io/2020/02/11/Layered-architechture-and-its-data-decoupling/vo-dto-do-po.png" alt="VO DTO DO PO转换关系"></p>
+<p>我们知道对于修改量比较大的代码，Code Review还是比较占用时间的，因此Code Review不会检查诸如代码格式、if条件是否需要合并、基本功能等这些基本的问题。这些问题需要在Code Review之前由开发、自动化工具和单元测试来保证，比如Lint、Coverity、Findbug、PMD能够帮助我们发现很多潜在的bug、兼容性问题和代码规范问题，我们应该充分利用这些工具。</p>
+<h1 id="Code-Review之中"><a href="#Code-Review之中" class="headerlink" title="Code Review之中"></a>Code Review之中</h1><p>开始Code Review时，开发人员需要确认Reviewers是否了解代码针对的需求或问题，如果不了解可以给Reviewers简单介绍一下，然后<font color="red">按照真实业务的流程来介绍代码</font>，重点介绍可能存在问题的地方，Reviewers在听的时候可以随时提问，确认是问题或需要再确认的需要<font color="red">及时在代码中标注出来</font>。Reviews可以根据如下清单来Review代码：</p>
 <ul>
-<li><p>用户发出请求，其请求中的数据在UI层表示为VO</p>
-</li>
-<li><p>UI层把VO转换为业务层对应方法所要求的DTO并传送给服务层（在WEB开发中，DTO为API接收到的参数）</p>
-</li>
-<li><p>业务层首先根据DTO的数据构造（或重建）一个DO，调用DO的业务方法完成具体业务</p>
-</li>
-<li><p>业务层把DO转换为存储层对应的PO，调用相应的存储层的持久化方法，把PO传递给它，完成存储操作</p>
-</li>
-<li><p>对于逆向操作，如读取，也采取类似的方法进行转换和传递</p>
-</li>
+<li>代码是否很容易理解</li>
+<li>代码中是否有重复的地方</li>
+<li>代码是否容易测试和调试</li>
+<li>代码是否考虑到并发</li>
+<li>代码是否考虑到了非功能性需求，如性能、内存</li>
+<li>代码是否符合现有的软件架构</li>
+<li>代码是否符合单一职责原则（SRP)</li>
+<li>代码是否符合开闭原则（OCP)</li>
+<li>代码是否符合依赖倒置原则（OIP)</li>
 </ul>
+<p>虽然具体清单项可能不同项目会有不同，但上述这些Review项一般是必须的。</p>
+<h1 id="Code-Review之后"><a href="#Code-Review之后" class="headerlink" title="Code Review之后"></a>Code Review之后</h1><p>代码经过Code Review之后，开发人员需要针对Review过程中提出的问题进行分析和修改，修改完成后再提交新的代码，再走一遍上述流程。一般经过一次Review的代码在第二次Review时会特别快。</p>
+<p>在这里有一点往往是团队忽略的，如果在Review时经常发现一些同类型的问题，这时就该考虑是不是团队内部对相关知识缺乏了解，是不是应该对团队进行一次相关的培训。</p>
+<p>另外，如果我们经常Review出某一类问题，也可以考虑通过配置工具来自动扫描出相关问题。</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ol>
+<li>Code Review Checklist – To Perform Effective Code Reviews. <a href="https://www.evoketechnologies.com/blog/code-review-checklist-perform-effective-code-reviews/" target="_blank" rel="noopener">https://www.evoketechnologies.com/blog/code-review-checklist-perform-effective-code-reviews/</a></li>
+</ol>
 
     </div>
 
@@ -294,7 +285,7 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/%E8%BD%AF%E4%BB%B6%E6%9E%B6%E6%9E%84-%E5%88%86%E5%B1%82%EF%BC%8C%E6%95%B0%E6%8D%AE%E8%A7%A3%E8%80%A6/" rel="tag"># 软件架构,分层，数据解耦</a>
+              <a href="/tags/%E8%83%BD%E5%8A%9B%E5%BB%BA%E8%AE%BE-code-review/" rel="tag"># 能力建设, code review</a>
           </div>
 
         
@@ -303,13 +294,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/02/08/%E5%88%A9%E7%94%A8Hexo%E5%9C%A8Github%E4%B8%8A%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2/" rel="prev" title="利用Hexo + Travis CI在Github上搭建个人博客">
-      <i class="fa fa-chevron-left"></i> 利用Hexo + Travis CI在Github上搭建个人博客
+    <a href="/2020/02/20/Spring-Security-Source-Code2-filter-Chain2/" rel="prev" title="Spring Security源码导读2 - Spring Security过滤器链初始化2">
+      <i class="fa fa-chevron-left"></i> Spring Security源码导读2 - Spring Security过滤器链初始化2
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/02/14/the-five-dysfunctions-of-a-team-for-team-manager/" rel="next" title="从团队协作的五大障碍看团队管理该怎么做">
-      从团队协作的五大障碍看团队管理该怎么做 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -369,7 +357,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-分层软件架构"><span class="nav-number">1.</span> <span class="nav-text">1. 分层软件架构</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-各软件层间的数据解耦和转换"><span class="nav-number">2.</span> <span class="nav-text">2. 各软件层间的数据解耦和转换</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#一般的代码合入流程"><span class="nav-number">2.</span> <span class="nav-text">一般的代码合入流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Code-Review之前"><span class="nav-number">3.</span> <span class="nav-text">Code Review之前</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Code-Review之中"><span class="nav-number">4.</span> <span class="nav-text">Code Review之中</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Code-Review之后"><span class="nav-number">5.</span> <span class="nav-text">Code Review之后</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
