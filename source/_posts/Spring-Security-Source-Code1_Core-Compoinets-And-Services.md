@@ -15,7 +15,7 @@ Spring Security 拥有以下特性：
 
 Spring Security与Spring和Spring Boot的关系如下：
 
-![image-20200224100517215](/Users/liulijun/projects/blog/source/_posts/Spring-Security-Code1-Core-Components-And-Services/springframework_springboot_springsecurity.png)
+![image-20200224100517215](https://liulijun-dev.github.io/2020/02/24/Spring-Security-Source-Code1_Core-Compoinets-And-Services/springframework_springboot_springsecurity.png)
 
 目前Spring Security提供以下安全技术或支持与现有技术集成：
 
