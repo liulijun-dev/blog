@@ -185,6 +185,192 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://liulijun-dev.github.io/2020/02/24/Spring-Security-Source-Code1_Core-Compoinets-And-Services/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="刘利军">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="刘利军">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/02/24/Spring-Security-Source-Code1_Core-Compoinets-And-Services/" class="post-title-link" itemprop="url">Spring Security源码阅读1 - 核心组件和服务</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-02-24 15:42:28 / 修改时间：16:09:41" itemprop="dateCreated datePublished" datetime="2020-02-24T15:42:28+08:00">2020-02-24</time>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>8 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Spring Security 是一个能够为基于 Spring 的企业应用系统提供声明式的安全访问控制解决方案的安全框架。它提供了一组可以在 Spring 应用上下文中配置的 Bean，充分利用了 Spring IoC（Inversion of Control 控制反转），DI（Dependency Injection 依赖注入）和 AOP（面向切面编程）功能，为应用系统提供声明式的安全访问控制功能，减少了为企业系统安全控制编写大量重复代码的工作。</p>
+<p>Spring Security 拥有以下特性：</p>
+<ul>
+<li>对身份认证和授权的全面且可扩展的支持</li>
+<li>防御会话固定、点击劫持，跨站请求伪造等攻击</li>
+<li>支持 Servlet API 集成</li>
+<li>支持与 Spring Web MVC 集成</li>
+<li>其他的特性</li>
+</ul>
+<p>Spring Security与Spring和Spring Boot的关系如下：</p>
+<p><img src="/.io//liulijun/projects/blog/source/_posts/Spring-Security-Code1-Core-Components-And-Services/springframework_springboot_springsecurity.png" alt="image-20200224100517215"></p>
+<p>目前Spring Security提供以下安全技术或支持与现有技术集成：</p>
+<ul>
+<li>In-Memory认证</li>
+<li>JDBC认证</li>
+<li>LDAP认证</li>
+<li>Active Directory认证</li>
+<li>Remember-Me认证</li>
+<li>OpenID</li>
+<li>匿名认证</li>
+<li>JAAS(Java Authentication and Authorization) Provider</li>
+<li>CAS认证</li>
+<li>X.509认证</li>
+<li>Basic And Digest认证</li>
+<li>OAuth 2.0</li>
+<li>SAML2</li>
+</ul>
+<p>接下来先介绍Spring Security的核心组件开始。</p>
+<h1 id="1-核心组件-SecurityContextHolder-SecurityContext-and-Authentication"><a href="#1-核心组件-SecurityContextHolder-SecurityContext-and-Authentication" class="headerlink" title="1. 核心组件 - SecurityContextHolder, SecurityContext and Authentication"></a>1. 核心组件 - SecurityContextHolder, SecurityContext and Authentication</h1><p>最基本的对象是<code>SecurityContextHolder</code>，它存储当前应用程序安全上下文的详细信息，其中包括当前使用应用程序的主体（通常是用户）的详细信息。如当前操作的用户是谁，该用户是否已经被认证，他拥有哪些角色权限等。默认情况下，<code>SecurityContextHolder</code>使用 <code>ThreadLocal</code> 来存储这些详细信息，这意味着 Security Context 始终可用于同一执行线程中的方法，即使 Security Context 未作为这些方法的参数显式传递。考虑到在用户请求被处理后，Spring Security会自动清除线程，因此使用<code>ThreadLocal</code> 是线程安全的。</p>
+<p>SecurityContextHolder支持三种安全策略：</p>
+<ul>
+<li><code>SecurityContextHolder.MODE_THREADLOCAL</code>: 每个线程有其自己的<code>SecurityContextHolder</code></li>
+<li><code>SecurityContextHolder.MODE_INHERITABLETHREADLOCAL</code>: 继承自安全线程的线程与安全线程有相同的安全标识</li>
+<li><code>SecurityContextHolder.MODE_GLOBAL</code>：所有线程共享相同的<code>SecurityContextHolder</code></li>
+</ul>
+<p>可能通过配置<code>spring.security.strategy</code>系统属性来设置<code>SecurityContextHolder</code>的安全策略，但是大多数应用程序不需要修改<code>SecurityContextHolder</code>安全策略。</p>
+<h2 id="1-1-获取当前用户信息"><a href="#1-1-获取当前用户信息" class="headerlink" title="1.1 获取当前用户信息"></a>1.1 获取当前用户信息</h2><p><code>SecurityContextHolder</code>存储了当前与应用程序交互的用户信息，并且用户信息与当前执行线程已绑定。 在Spring Security中使用<code>Authentication</code>类代表用户信息，并且可以使用如下代码块在代码的任意处获得当前已验证用户的用户名：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">(<span class="number">1</span>)Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (principal <span class="keyword">instanceof</span> UserDetails) &#123;</span><br><span class="line">String username = ((UserDetails)principal).getUsername();</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">String username = principal.toString();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>(1) <code>getContext()</code>获得的是<code>SecurityContext</code>接口的实例，而该实例存储在<code>ThreadLocal</code>中(分析见附录-代码1)，代表当前线程需要的最少的安全信息。<code>SecurityContext</code>接口中定义了两个方法，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">SecurityContext</span> <span class="keyword">extends</span> <span class="title">Serializable</span> </span>&#123;</span><br><span class="line">   <span class="function">Authentication <span class="title">getAuthentication</span><span class="params">()</span></span>;</span><br><span class="line">   <span class="function"><span class="keyword">void</span> <span class="title">setAuthentication</span><span class="params">(Authentication authentication)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>并且通过跟踪代码可以确<code>getPrincipal()</code>返回的是<code>UserDetails</code>实例(分析见附录-代码1)。</p>
+<h2 id="1-2-Authentication"><a href="#1-2-Authentication" class="headerlink" title="1.2 Authentication"></a>1.2 Authentication</h2><p> <code>SecurityContext.getAuthentication()</code>返回的<code>Authentication</code>也是一个接口，它的定义如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// org.springframework.security.core.Authentication.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Authentication</span> <span class="keyword">extends</span> <span class="title">Principal</span>, <span class="title">Serializable</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 权限信息列表，默认是GrantedAuthority接口的一些实现类，通常是代表权限信息的一系列字符串</span></span><br><span class="line">    Collection&lt;? extends GrantedAuthority&gt; getAuthorities();</span><br><span class="line">    <span class="comment">// 凭证信息以证明主体的正确性，如用户在前端输入的密码</span></span><br><span class="line">    <span class="function">Object <span class="title">getCredentials</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="comment">// 其他信息，如IP地址，证书序列号等</span></span><br><span class="line">    <span class="function">Object <span class="title">getDetails</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="comment">// 主体的标识，如用户名，大部分情况下返回的是UserDetails接口的实例</span></span><br><span class="line">    <span class="function">Object <span class="title">getPrincipal</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">isAuthenticated</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setAuthenticated</span><span class="params">(<span class="keyword">boolean</span> isAuthenticated)</span> <span class="keyword">throws</span> IllegalArgumentException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p> <code>Authentication</code> 直接继承自 <code>Principal</code> 类，而<code>Principal</code>是位于 java.security 包中。<strong>通过<code>Authentication</code> 接口的实现类，我们可以得到用户拥有的权限信息列表，密码，用户细节信息，用户身份信息，认证信息等。</strong></p>
+<h3 id="1-2-1-UserDetailService"><a href="#1-2-1-UserDetailService" class="headerlink" title="1.2.1 UserDetailService"></a>1.2.1 UserDetailService</h3><p>从<code>Authentication</code>代码可知，可以通过其中的<code>getPrincipal()</code>方法获得安全主体，虽然返回的是Object对象，<strong>但大多数情况下我们可以将其转为<code>UserDetails</code>对象</strong>。<code>UserDetails</code>是Spring Security的核心类，代表一个安全主体并且是高度可扩展的，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">UserDetails</span> <span class="keyword">extends</span> <span class="title">Serializable</span> </span>&#123;</span><br><span class="line">   Collection&lt;? extends GrantedAuthority&gt; getAuthorities();</span><br><span class="line">   <span class="function">String <span class="title">getPassword</span><span class="params">()</span></span>;</span><br><span class="line">   <span class="function">String <span class="title">getUsername</span><span class="params">()</span></span>;</span><br><span class="line">   <span class="function"><span class="keyword">boolean</span> <span class="title">isAccountNonExpired</span><span class="params">()</span></span>;</span><br><span class="line">   <span class="function"><span class="keyword">boolean</span> <span class="title">isAccountNonLocked</span><span class="params">()</span></span>;</span><br><span class="line">   <span class="function"><span class="keyword">boolean</span> <span class="title">isCredentialsNonExpired</span><span class="params">()</span></span>;</span><br><span class="line">   <span class="function"><span class="keyword">boolean</span> <span class="title">isEnabled</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里需要注意的是<code>UserDetails</code>的<code>getPassword()</code>和<code>Authentication</code>的 <code>getCredentials()</code>的不同：前者是用户正确的密码，后者是用户提交的密码凭证。 </p>
+<p>在<code>SecurityContextHolder</code>中用<code>UserDetails</code>存储安全主体信息，但是在应用程序中我们需要的安全主体信息可能更多（如需要email, empolyeeNumber等），此时我们可以通过继承<code>UserDetails</code>接口实现自定义安全主体并存储在<code>SecurityContextHolder</code>中，从而在使用时可以将<code>SecurityContextHolder</code>中获得的<code>UserDetails</code>实例转换为自定义的实例。<strong>因此我们可以将<code>UserDetails</code>认为是应用程序和Spring Security框架之间的适配器</strong>。</p>
+<p>为了向<code>SecurityContextHolder</code>中提供自定义的<code>UserDetails</code>，只需要实向Spring容器中注册一个实现了<code>UserDetailsService</code>接口的Bean即可，模板代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line">publiic <span class="class"><span class="keyword">class</span> <span class="title">AuthUserDetailsService</span> <span class="keyword">implements</span> <span class="title">UserDetailsService</span> </span>&#123;</span><br><span class="line">  <span class="meta">@Override</span>  </span><br><span class="line">  (<span class="number">2</span>)<span class="function"><span class="keyword">public</span> UserDetails <span class="title">loadUserByUsername</span><span class="params">(userName: String)</span> </span>&#123;</span><br><span class="line">    	<span class="comment">//你的逻辑</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>（2）只需要在<code>loadUserByUsername</code>接口中添加定制的业务逻辑即可</p>
+<p>Spring Security也提供了一些<code>UserDetailsService</code>的实现，如<code>InMemoryDaoImpl</code>)和<code>JdbcDaoImpl</code>。<strong>但是不管如何提供<code>UserDetailsService</code>的实现，都可以通过<code>SecurityContextHolder</code>获得<code>UserDetailsService</code>返回的数据</strong>。</p>
+<h3 id="1-2-2-GrantedAuthority"><a href="#1-2-2-GrantedAuthority" class="headerlink" title="1.2.2 GrantedAuthority"></a>1.2.2 GrantedAuthority</h3><p>除了主体，另一个<code>Authentication</code>提供的重要方法是<code>getAuthorities()</code>。这个方法提供了<code>GrantedAuthority</code>对象数组。<code>GrantedAuthority</code>是赋予到主体的权限，这些权限通常使用角色表示，比如<code>ROLE_ADMINISTRATOR</code>或<code>ROLE_HR_SUPERVISOR</code>。这些角色会用于web验证，方法验证和领域对象验证。<code>GrantedAuthority</code>对象通常使用<code>UserDetailsService</code>读取，即在<code>loadUserByUsername()</code>方法中返回的<code>UserDetails</code>实例时设置。</p>
+<h2 id="1-3-总结"><a href="#1-3-总结" class="headerlink" title="1.3 总结"></a>1.3 总结</h2><p>上面介绍的Spring Security中使用的核心组件及其功能如下：</p>
+<ul>
+<li><code>SecurityContextHolder</code>：提供几种保存 <code>SecurityContext</code>的方式</li>
+<li><code>SecurityContext</code>：保存<code>Authentication</code>信息</li>
+<li><code>Authentication</code>：代表Spring Security中的主体</li>
+<li><code>GrantedAuthority</code>：主体的权限</li>
+<li><code>UserDetails</code>：代表主体信息</li>
+<li><code>UserDetailsService</code>：加载<code>UserDetails</code></li>
+</ul>
+<h1 id="2-核心服务-AuthenticationManager-ProviderManager-和-AuthenticationProvider"><a href="#2-核心服务-AuthenticationManager-ProviderManager-和-AuthenticationProvider" class="headerlink" title="2. 核心服务 - AuthenticationManager, ProviderManager 和 AuthenticationProvider"></a>2. 核心服务 - AuthenticationManager, ProviderManager 和 AuthenticationProvider</h1><p><code>AuthenticationManager</code>接口是认证相关的核心接口，也是认证发起的出发点，在实际需求中，应用可能即允许用户使用用户名 + 密码登录，又允许用户使用邮箱 + 密码，手机号码 + 密码等形式登录，所以要求认证系统要支持多种认证方式，因此需要一个接口定义认证的基本功能。<code>AuthenticationManager</code>的定义如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">AuthenticationManager</span> </span>&#123;</span><br><span class="line">   <span class="function">Authentication <span class="title">authenticate</span><span class="params">(Authentication authentication)</span></span></span><br><span class="line"><span class="function">         <span class="keyword">throws</span> AuthenticationException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Spring Security 中 <code>AuthenticationManager</code>接口的默认实现是 <strong><code>ProviderManager</code></strong>, 其对<code>Authentication authenticate(Authentication authentication)</code>方法实现如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Authentication <span class="title">authenticate</span><span class="params">(Authentication authentication)</span></span></span><br><span class="line"><span class="function">      <span class="keyword">throws</span> AuthenticationException </span>&#123;</span><br><span class="line">   Class&lt;? extends Authentication&gt; toTest = authentication.getClass();</span><br><span class="line">   AuthenticationException lastException = <span class="keyword">null</span>;</span><br><span class="line">   AuthenticationException parentException = <span class="keyword">null</span>;</span><br><span class="line">   Authentication result = <span class="keyword">null</span>;</span><br><span class="line">   Authentication parentResult = <span class="keyword">null</span>;</span><br><span class="line">   <span class="keyword">boolean</span> debug = logger.isDebugEnabled();</span><br><span class="line"></span><br><span class="line">   (<span class="number">3</span>)<span class="keyword">for</span> (AuthenticationProvider provider : getProviders()) &#123;</span><br><span class="line">      <span class="keyword">if</span> (!provider.supports(toTest)) &#123;</span><br><span class="line">         <span class="keyword">continue</span>;</span><br><span class="line">      &#125;</span><br><span class="line">     </span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">         result = provider.authenticate(authentication);</span><br><span class="line"></span><br><span class="line">         <span class="keyword">if</span> (result != <span class="keyword">null</span>) &#123;</span><br><span class="line">            (<span class="number">4</span>)copyDetails(authentication, result);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">catch</span> (AccountStatusException | InternalAuthenticationServiceException e) &#123;</span><br><span class="line">         prepareException(e, authentication);</span><br><span class="line">         <span class="keyword">throw</span> e;</span><br><span class="line">      &#125; <span class="keyword">catch</span> (AuthenticationException e) &#123;</span><br><span class="line">         lastException = e;</span><br><span class="line">      &#125;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">if</span> (result == <span class="keyword">null</span> &amp;&amp; parent != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="comment">// Allow the parent to try.</span></span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">         (<span class="number">5</span>)result = parentResult = parent.authenticate(authentication);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">catch</span> (ProviderNotFoundException e) &#123;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">catch</span> (AuthenticationException e) &#123;</span><br><span class="line">         lastException = parentException = e;</span><br><span class="line">      &#125;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">if</span> (result != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">if</span> (eraseCredentialsAfterAuthentication</span><br><span class="line">            &amp;&amp; (result <span class="keyword">instanceof</span> CredentialsContainer)) &#123;</span><br><span class="line">         (<span class="number">6</span>)((CredentialsContainer) result).eraseCredentials();</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// If the parent AuthenticationManager was attempted and successful than it will publish an AuthenticationSuccessEvent</span></span><br><span class="line">      <span class="comment">// This check prevents a duplicate AuthenticationSuccessEvent if the parent AuthenticationManager already published it</span></span><br><span class="line">      <span class="keyword">if</span> (parentResult == <span class="keyword">null</span>) &#123;</span><br><span class="line">         eventPublisher.publishAuthenticationSuccess(result);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> result;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">if</span> (lastException == <span class="keyword">null</span>) &#123;</span><br><span class="line">      lastException = <span class="keyword">new</span> ProviderNotFoundException(messages.getMessage(</span><br><span class="line">            <span class="string">"ProviderManager.providerNotFound"</span>,</span><br><span class="line">            <span class="keyword">new</span> Object[] &#123; toTest.getName() &#125;,</span><br><span class="line">            <span class="string">"No AuthenticationProvider found for &#123;0&#125;"</span>));</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">if</span> (parentException == <span class="keyword">null</span>) &#123;</span><br><span class="line">      prepareException(lastException, authentication);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   (<span class="number">7</span>)<span class="keyword">throw</span> lastException;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>(3) <code>ProviderManager</code>本身并不直接处理身份认证请求，而是将认证委托给<code>AuthenticationProvider</code>，依次查询每个列表项是否可以执行身份认证。每个 Provider 要么抛出异常要么返回一个完全填充的 <code>Authentication</code>对象</p>
+<p>(4) 认证成功后，会将原始的认证信息拷贝到Provider的返回结果中</p>
+<p>(5) 若当前ProviderManager无法完成认证操作，且其包含父级认证器，则转交给父级认证器尝试进行认证</p>
+<p>(6) 完成认证，从authentication对象中删除私密数据，防止一些机密数据（如用户密码）过长时间保留在内存中</p>
+<p>(7) 如果认证失败，则抛出<code>AuthenticationException</code></p>
+<p>Spring Security提供了很多认证Provider，如：</p>
+<ul>
+<li><code>DaoAuthenticationProvider</code></li>
+<li><code>AnonymousAuthenticationProvider</code></li>
+<li><code>RememberMeAuthenticationProvider</code></li>
+</ul>
+<p>所有的Provider都继承自<code>AuthenticationProvider</code>接口，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">AuthenticationProvider</span> </span>&#123;</span><br><span class="line">   <span class="comment">// 验证请求</span></span><br><span class="line">   <span class="function">Authentication <span class="title">authenticate</span><span class="params">(Authentication authentication)</span></span></span><br><span class="line"><span class="function">         <span class="keyword">throws</span> AuthenticationException</span>;</span><br><span class="line"></span><br><span class="line">   <span class="comment">// 判断是否支持对authentication的认证</span></span><br><span class="line">   <span class="function"><span class="keyword">boolean</span> <span class="title">supports</span><span class="params">(Class&lt;?&gt; authentication)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>比如在<code>DaoAuthenticationProvider</code>中使用<code>UserDetailsService</code>根据用户名获得<code>UserDetails</code>，再通过比对用户密码判断用户是否合法。</p>
+<p>但是需要注意的是，在使用相应的认证机制时，必须为其提供相应的认证Provider，否则会导致认证失败。如JA-SIG CAS认证，其必须使用<code>CasAuthenticationProvider</code>。</p>
+<h1 id="3-总结"><a href="#3-总结" class="headerlink" title="3. 总结"></a>3. 总结</h1><ul>
+<li>应用中可以通过<code>SecurityContextHolder</code>获得认证信息<code>Authentication</code></li>
+<li>应用可以从获得的<code>Authentication</code>实例中获得认证后的用户信息，如用户名和权限</li>
+<li>应用通过继承<code>UserDetails</code>接口定制合适的UserDetails（如新增getEmail()函数）</li>
+<li>应用通过继承<code>UserDetailsService</code>接口将系统中存储的用户信息转换为Spring Security的UserDetails实例</li>
+<li>Spring Security中<code>ProviderManager</code>为认证的入口</li>
+<li><code>ProviderManager</code>通过<code>AuthenticationProvider</code>完成认证</li>
+</ul>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ol>
+<li><a href="https://segmentfault.com/a/1190000020886438" target="_blank" rel="noopener" title="Spring Security架构简介">Spring Security架构简介</a></li>
+<li><a href="https://docs.spring.io/spring-security/site/docs/5.2.2.RELEASE/reference/htmlsingle/#core-services" target="_blank" rel="noopener" title="Spring security 5.2官方文档">Spring Security 5.2官方文档</a></li>
+</ol>
+<h1 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h1><h1 id="代码1"><a href="#代码1" class="headerlink" title="代码1"></a>代码1</h1><p><code>SecurityContextHolder.getContext()</code>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> SecurityContext <span class="title">getContext</span><span class="params">()</span> </span>&#123;</span><br><span class="line">   （<span class="number">1</span>)<span class="keyword">return</span> strategy.getContext();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>(1) 默认情况下strategy的指向的是ThreadLocalSecurityContextHolderStrategy实例，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">initialize</span><span class="params">()</span> </span>&#123;</span><br><span class="line">   <span class="keyword">if</span> (!StringUtils.hasText(strategyName)) &#123;</span><br><span class="line">      <span class="comment">// Set default</span></span><br><span class="line">      strategyName = MODE_THREADLOCAL;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">if</span> (strategyName.equals(MODE_THREADLOCAL)) &#123;</span><br><span class="line">      (<span class="number">2</span>) strategy = <span class="keyword">new</span> ThreadLocalSecurityContextHolderStrategy();</span><br><span class="line">   &#125;</span><br><span class="line">   ......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>(2) 可以确定最终调用的是ThreadLocalSecurityContextHolderStrategy实例中的<code>getContexxt()</code>方法，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> SecurityContext <span class="title">getContext</span><span class="params">()</span> </span>&#123;</span><br><span class="line">   (<span class="number">3</span>)SecurityContext ctx = contextHolder.get();</span><br><span class="line"></span><br><span class="line">   <span class="keyword">if</span> (ctx == <span class="keyword">null</span>) &#123;</span><br><span class="line">      ctx = createEmptyContext();</span><br><span class="line">      contextHolder.set(ctx);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">return</span> ctx;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>(3) <code>contextHolder</code>的定义如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> ThreadLocal&lt;SecurityContext&gt; contextHolder = <span class="keyword">new</span> ThreadLocal&lt;&gt;();</span><br></pre></td></tr></table></figure>
+
+<p>因此默认获得的SecurityContext实例是存放在ThreadLocal中的。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://liulijun-dev.github.io/2020/02/21/code-review-process/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -216,7 +402,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-24 16:03:12" itemprop="dateModified" datetime="2020-02-24T16:03:12+08:00">2020-02-24</time>
+                <time title="修改时间：2020-02-24 16:09:41" itemprop="dateModified" datetime="2020-02-24T16:09:41+08:00">2020-02-24</time>
               </span>
 
           <br>
@@ -330,7 +516,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-24 16:03:12" itemprop="dateModified" datetime="2020-02-24T16:03:12+08:00">2020-02-24</time>
+                <time title="修改时间：2020-02-24 16:09:41" itemprop="dateModified" datetime="2020-02-24T16:09:41+08:00">2020-02-24</time>
               </span>
 
           <br>
@@ -470,7 +656,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-24 16:03:12" itemprop="dateModified" datetime="2020-02-24T16:03:12+08:00">2020-02-24</time>
+                <time title="修改时间：2020-02-24 16:09:41" itemprop="dateModified" datetime="2020-02-24T16:09:41+08:00">2020-02-24</time>
               </span>
 
           <br>
@@ -600,7 +786,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-24 16:03:12" itemprop="dateModified" datetime="2020-02-24T16:03:12+08:00">2020-02-24</time>
+                <time title="修改时间：2020-02-24 16:09:41" itemprop="dateModified" datetime="2020-02-24T16:09:41+08:00">2020-02-24</time>
               </span>
 
           <br>
@@ -809,7 +995,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-24 16:03:12" itemprop="dateModified" datetime="2020-02-24T16:03:12+08:00">2020-02-24</time>
+                <time title="修改时间：2020-02-24 16:09:41" itemprop="dateModified" datetime="2020-02-24T16:09:41+08:00">2020-02-24</time>
               </span>
 
           <br>
@@ -924,7 +1110,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-24 16:03:12" itemprop="dateModified" datetime="2020-02-24T16:03:12+08:00">2020-02-24</time>
+                <time title="修改时间：2020-02-24 16:09:41" itemprop="dateModified" datetime="2020-02-24T16:09:41+08:00">2020-02-24</time>
               </span>
 
           <br>
@@ -1053,12 +1239,12 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">7</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>
@@ -1103,12 +1289,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">23k</span>
+    <span title="站点总字数">32k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">21 分钟</span>
+    <span title="站点阅读时长">29 分钟</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
   </div>
