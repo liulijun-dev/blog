@@ -16,15 +16,15 @@ CAP定理是分布式系统中的一个基本定理，它指出任何分布式�
 
 
 
-![system_architecture](/Users/liulijun/project/learn/liulijun-dev.github.io/source/_posts/CAP-Theorem-and-Its-Proof/system_architecture.svg)
+![system_architecture](https://liulijun-dev.github.io/2020/04/15/CAP-Theorem-and-Its-Proof/system_architecture.svg)
 
 客户端可以向任何服务器发起读写请求。当一个服务器收到请求后，它执行计算并向客户端返回响应。请求写的过程如下：
 
-![write_flow](/Users/liulijun/project/learn/liulijun-dev.github.io/source/_posts/CAP-Theorem-and-Its-Proof/write_flow.png)
+![write_flow](https://liulijun-dev.github.io/2020/04/15/CAP-Theorem-and-Its-Proof/write_flow.png)
 
 请求读的过程如下：
 
-![read_flow](/Users/liulijun/project/learn/liulijun-dev.github.io/source/_posts/CAP-Theorem-and-Its-Proof/read_flow.png)
+![read_flow](https://liulijun-dev.github.io/2020/04/15/CAP-Theorem-and-Its-Proof/read_flow.png)
 
 # 2. 一致性
 
@@ -38,11 +38,11 @@ CAP定理是分布式系统中的一个基本定理，它指出任何分布式�
 
 如下图是一个非一致性系统的例子，客户端向G<sub>1</sub>成功写入v<sub>1</sub>，但当客户端从G<sub>2</sub>读取v的值时，其获得的结果是v<sub>0</sub>。
 
-![inconsistent_system](/Users/liulijun/project/learn/liulijun-dev.github.io/source/_posts/CAP-Theorem-and-Its-Proof/inconsistent_system.png)
+![inconsistent_system](https://liulijun-dev.github.io/2020/04/15/CAP-Theorem-and-Its-Proof/inconsistent_system.png)
 
 一个一致性系统如下图所示，G<sub>1</sub>会先将v值复制给G<sub>2</sub>，再向客户端响应写入结果，当客户端从G<sub>2</sub>读取值时，其获得的是最新的值v<sub>1</sub>。
 
-![consistent_system](/Users/liulijun/project/learn/liulijun-dev.github.io/source/_posts/CAP-Theorem-and-Its-Proof/consistent_system.png)
+![consistent_system](https://liulijun-dev.github.io/2020/04/15/CAP-Theorem-and-Its-Proof/consistent_system.png)
 
 # 3. 可用性
 
@@ -62,7 +62,7 @@ CAP定理是分布式系统中的一个基本定理，它指出任何分布式�
 
 大多数分布式系统都分布在多个子网络，每个子网络就叫做一个区（partition）。分区容错的意思是，区间通信可能失败。比如，一台服务器放在中国，另一台服务器放在美国，这就是两个区，它们之间可能无法通信。如果所有的通信都被丢弃，系统如下图所示。
 
-![partition_tolerance](/Users/liulijun/project/learn/liulijun-dev.github.io/source/_posts/CAP-Theorem-and-Its-Proof/partition_tolerance.svg)
+![partition_tolerance](https://liulijun-dev.github.io/2020/04/15/CAP-Theorem-and-Its-Proof/partition_tolerance.svg)
 
 在一个支持分区容错的系统中，我们的系统必须能够在任意网络分区的情况下正常工作。
 
@@ -72,15 +72,15 @@ CAP定理是分布式系统中的一个基本定理，它指出任何分布式�
 
 假设存在一个系统同时具有一致性、可用性和分区容错性。首先对系统进行划分，结果如下：
 
-![partition_tolerance](/Users/liulijun/project/learn/liulijun-dev.github.io/source/_posts/CAP-Theorem-and-Its-Proof/partition_tolerance.svg)
+![partition_tolerance](/https://liulijun-dev.github.io/2020/04/15/CAP-Theorem-and-Its-Proof/partition_tolerance.svg)
 
 接下来，客户端向G<sub>2</sub>服务器请求写v<sub>1</sub>，因为系统是可用的，故G<sub>2</sub>会返回响应。但是因为网络被隔离，G<sub>2</sub>无法向G<sub>1</sub>同步更新v<sub>1</sub>。
 
-![proof_step_2](/Users/liulijun/project/learn/liulijun-dev.github.io/source/_posts/CAP-Theorem-and-Its-Proof/proof_step_2.png)
+![proof_step_2](https://liulijun-dev.github.io/2020/04/15/CAP-Theorem-and-Its-Proof/proof_step_2.png)
 
 最后，客户端会向G<sub>1</sub>和G<sub>2</sub>分别请求v的值，因为系统是可用的，G<sub>1</sub>和G<sub>2</sub>会分别返回v<sub>0</sub>和v<sub>1</sub>，导致了**不一致**。
 
-![proof_step_3](/Users/liulijun/project/learn/liulijun-dev.github.io/source/_posts/CAP-Theorem-and-Its-Proof/proof_step_3.png)
+![proof_step_3](https://liulijun-dev.github.io/2020/04/15/CAP-Theorem-and-Its-Proof/proof_step_3.png)
 
 
 
@@ -100,7 +100,7 @@ CAP定理是分布式系统中的一个基本定理，它指出任何分布式�
 
 举例来说，发布一张网页到 CDN，多个服务器有这张网页的副本。后来发现一个错误，需要更新网页，这时只能每个服务器都更新一遍。一般来说，网页的更新不是特别强调一致性。短时期内，一些用户拿到老版本，另一些用户拿到新版本，问题不会特别大。当然，所有人最终都会看到新版本。所以，这个场合就是可用性高于一致性。
 
-![three_ indicators](/Users/liulijun/project/learn/liulijun-dev.github.io/source/_posts/CAP-Theorem-and-Its-Proof/three_ indicators.png)
+![three_ indicators](https://liulijun-dev.github.io/2020/04/15/CAP-Theorem-and-Its-Proof/three_ indicators.png)
 
 
 
