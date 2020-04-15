@@ -100,7 +100,7 @@ CAP定理是分布式系统中的一个基本定理，它指出任何分布式�
 
 举例来说，发布一张网页到 CDN，多个服务器有这张网页的副本。后来发现一个错误，需要更新网页，这时只能每个服务器都更新一遍。一般来说，网页的更新不是特别强调一致性。短时期内，一些用户拿到老版本，另一些用户拿到新版本，问题不会特别大。当然，所有人最终都会看到新版本。所以，这个场合就是可用性高于一致性。
 
-![three_ indicators](https://liulijun-dev.github.io/2020/04/15/CAP-Theorem-and-Its-Proof/three_ indicators.png)
+![three_ indicators](https://liulijun-dev.github.io/2020/04/15/CAP-Theorem-and-Its-Proof/three_indicators.png)
 
 
 
